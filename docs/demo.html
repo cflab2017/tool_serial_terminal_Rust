@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CNTerminal — Live Demo</title>
+<style>
+  :root {
+    --bg:#0b0a08; --panel:#141210; --panel2:#1c1916;
+    --line:#2a251e; --text:#f3e7cf; --muted:#7a6f5c;
+    --amber:#ffb000; --amber-dim:#b8801f; --amber-glow:rgba(255,176,0,.35);
+    --green:#5ddc7a; --red:#e0876a;
+    --rx:#9ad8b0; --tx:#e8c98a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Consolas','Menlo','JetBrains Mono',monospace}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(ellipse 120% 80% at 50% -10%, rgba(255,176,0,.06), transparent 60%), var(--bg);
+    color:var(--text); display:flex; flex-direction:column;
+    padding:10px; min-height:100vh; position:relative; overflow:hidden;
+  }
+  /* subtle CRT scanlines */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:99;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.16) 3px, rgba(0,0,0,0) 4px);
+    mix-blend-mode:multiply;
+  }
+
+  .titlebar{font-size:11px; color:var(--muted); padding:4px 8px; text-align:center; border-bottom:1px solid var(--line); margin-bottom:8px}
+
+  /* top bar */
+  .top{display:flex; align-items:center; gap:10px; padding:6px 8px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+  .brand{font-weight:800; color:var(--amber); font-size:14px; letter-spacing:.02em; text-shadow:0 0 12px var(--amber-glow); white-space:nowrap}
+  .led{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--red); margin-right:6px; vertical-align:middle; box-shadow:0 0 8px var(--red)}
+  .led.on{background:var(--green); box-shadow:0 0 10px var(--green); animation:pulse 2s infinite}
+  @keyframes pulse{50%{opacity:.5}}
+  .grp{display:flex; align-items:center; gap:6px}
+  .grp label{font-size:10px; color:var(--amber-dim); letter-spacing:.1em; text-transform:uppercase}
+  select, input[type=text]{
+    background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    font-family:inherit; font-size:12px; padding:6px 8px; border-radius:4px; outline:none;
+  }
+  input[type=text]:focus, select:focus{border-color:var(--amber-dim)}
+  .btn{
+    background:transparent; border:1px solid var(--line); color:var(--text);
+    font-family:inherit; font-size:12px; padding:6px 12px; border-radius:5px;
+    cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--amber-dim)}
+  .btn.primary{background:var(--amber); color:#1a1304; border-color:var(--amber); font-weight:700}
+  .btn.primary:hover{box-shadow:0 0 18px var(--amber-glow)}
+  .btn.primary.on{background:transparent; color:var(--red); border-color:#7a4a3a; font-weight:500}
+
+  .tg{
+    background:transparent; border:1px solid var(--line); color:var(--muted);
+    font-family:inherit; font-size:11px; padding:5px 10px; border-radius:5px; cursor:pointer;
+  }
+  .tg.active{border-color:var(--amber-dim); color:var(--amber); background:rgba(255,176,0,.06)}
+  .tg:hover{color:var(--text)}
+
+  /* main area: console (left) + send (right) */
+  .main{flex:1; display:flex; gap:8px; margin-top:8px; min-height:0}
+  .console{
+    flex:1; background:var(--panel); border:1px solid var(--line);
+    border-radius:6px; padding:10px; overflow-y:auto; font-size:12px;
+    line-height:1.4; min-height:300px;
+  }
+  .console::-webkit-scrollbar{width:8px}
+  .console::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
+  .console::-webkit-scrollbar-thumb:hover{background:var(--amber-dim)}
+  .ln{display:flex; gap:6px; padding:0}
+  .ln .ts{color:var(--muted); font-size:10px; flex-shrink:0; opacity:.8}
+  .ln .arrow{flex-shrink:0; font-weight:700; width:12px}
+  .ln.rx .arrow, .ln.rx .data{color:var(--rx)}
+  .ln.tx .arrow, .ln.tx .data{color:var(--tx)}
+  .ln.sys .data{color:var(--muted); font-style:italic}
+  .ln.err .arrow, .ln.err .data{color:var(--red)}
+  .hint{color:#4f473a; text-align:center; padding-top:30px; font-size:12px; line-height:1.7}
+  .hint b{color:var(--amber-dim)}
+
+  .send{
+    width:280px; min-width:220px; background:var(--bg);
+    display:flex; flex-direction:column; gap:6px; padding-left:6px;
+  }
+  .send-head{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+  .send-head .label{color:var(--amber); font-weight:700; font-size:11px}
+  .send textarea{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:5px; padding:8px; font-family:inherit; font-size:12px;
+    resize:vertical; min-height:80px; outline:none;
+  }
+  .send textarea:focus{border-color:var(--amber-dim)}
+  .preview{
+    background:var(--panel2); border:1px solid var(--line); border-radius:4px;
+    padding:6px 8px; font-size:11px; line-height:1.5;
+  }
+  .preview .row{display:flex; gap:8px}
+  .preview .key{color:var(--amber-dim); width:42px; flex-shrink:0}
+  .preview .val{color:var(--text); word-break:break-all}
+  .preview .err{color:var(--red)}
+
+  .footer{
+    display:flex; align-items:center; gap:12px; padding:6px 8px;
+    border-top:1px solid var(--line); font-size:11px; color:var(--muted);
+    margin-top:8px; flex-wrap:wrap;
+  }
+  .footer .v{color:var(--text)}
+  .footer .rxv{color:var(--rx)}
+  .footer .txv{color:var(--tx)}
+  .spacer{flex:1}
+
+  /* demo banner */
+  .demo-banner{
+    position:absolute; top:8px; right:12px; z-index:100;
+    background:rgba(255,176,0,.12); border:1px solid var(--amber-dim);
+    color:var(--amber); padding:3px 10px; border-radius:99px; font-size:10px;
+    letter-spacing:.08em; pointer-events:none;
+  }
+</style>
+</head>
+<body>
+  <div class="demo-banner">LIVE DEMO · fake serial device</div>
+  <div class="titlebar">CNTerminal v0.1.0 · by Joseph.han · coding-now.com</div>
+
+  <div class="top">
+    <span class="brand"><span class="led" id="led"></span>CNTerminal</span>
+
+    <div class="grp">
+      <label>port</label>
+      <select id="port"><option>COM3</option><option>COM4</option></select>
+    </div>
+    <div class="grp">
+      <label>baud</label>
+      <input type="text" id="baud" value="115200" style="width:70px" />
+    </div>
+    <button class="btn primary" id="connect">Connect</button>
+
+    <div class="spacer"></div>
+
+    <button class="tg active" id="tg-ascii">ASCII</button>
+    <button class="tg" id="tg-hex">HEX</button>
+  </div>
+
+  <div class="main">
+    <div class="console" id="console">
+      <div class="hint" id="hint">
+        Click <b>Connect</b> to start the fake serial stream.<br/>
+        Try typing a command (e.g. <b>status</b>, <b>help</b>, <b>AT</b>) and press Enter.
+      </div>
+    </div>
+
+    <div class="send">
+      <div class="send-head">
+        <span class="label">▶ SEND</span>
+        <button class="tg active" id="m-text">TEXT</button>
+        <button class="tg" id="m-hex">HEX</button>
+        <span style="color:var(--amber-dim);font-size:10px;margin-left:auto">ENDING</span>
+        <select id="ending" style="font-size:11px;padding:3px 6px">
+          <option value="">none</option>
+          <option value="\n">LF</option>
+          <option value="\r">CR</option>
+          <option value="\r\n" selected>CRLF</option>
+        </select>
+      </div>
+      <textarea id="tx" placeholder="Enter to send · Shift+Enter for newline" rows="4" disabled></textarea>
+      <div class="preview" id="preview">
+        <div class="row"><span class="key">ASCII</span><span class="val" id="prev-ascii">(empty)</span></div>
+        <div class="row"><span class="key">HEX</span><span class="val" id="prev-hex">(empty)</span></div>
+      </div>
+      <button class="btn primary" id="send-btn" disabled>Send</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>STATUS: <span class="v" id="st-conn">Disconnected</span></span>
+    <span>RX: <span class="rxv" id="st-rx">0</span> B</span>
+    <span>TX: <span class="txv" id="st-tx">0</span> B</span>
+    <span>LINES: <span class="v" id="st-lines">0</span></span>
+  </div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const enc = new TextEncoder();
+  let connected = false;
+  let mode = 'text';       // 'text' | 'hex'
+  let showHex = false;     // ASCII <-> HEX display
+  let rxBytes = 0, txBytes = 0, lineCount = 0;
+  let demoTimer = null;
+  let t = 0;
+
+  const con = $('console');
+  function ts(){const d=new Date();return d.toTimeString().slice(0,8)+'.'+String(d.getMilliseconds()).padStart(3,'0')}
+  function toHex(bytes){let s='';for(let i=0;i<bytes.length;i++){if(i)s+=' ';s+=bytes[i].toString(16).toUpperCase().padStart(2,'0')}return s}
+  function atBottom(){return con.scrollHeight - con.scrollTop - con.clientHeight < 40}
+  function append(kind, text){
+    const stick = atBottom();
+    const h = $('hint'); if(h) h.remove();
+    const ln = document.createElement('div'); ln.className = 'ln ' + kind;
+    let html = '';
+    if(kind !== 'sys') html += `<span class="ts">${ts()}</span>`;
+    const arrow = kind==='rx'?'◄':kind==='tx'?'►':kind==='err'?'×':'·';
+    html += `<span class="arrow">${arrow}</span><span class="data"></span>`;
+    ln.innerHTML = html;
+    const bytes = enc.encode(text);
+    const shown = (showHex && (kind==='rx'||kind==='tx')) ? toHex(bytes) : text;
+    ln.querySelector('.data').textContent = shown;
+    con.appendChild(ln);
+    if(kind==='rx'||kind==='tx'){ lineCount++; $('st-lines').textContent = lineCount; }
+    if(stick) con.scrollTop = con.scrollHeight;
+    while(con.children.length > 200) con.removeChild(con.firstChild);
+  }
+
+  function setConnected(on){
+    connected = on;
+    $('led').classList.toggle('on', on);
+    const btn = $('connect');
+    btn.classList.toggle('on', on); btn.textContent = on ? 'Disconnect' : 'Connect';
+    $('tx').disabled = !on; $('send-btn').disabled = !on;
+    $('port').disabled = on; $('baud').disabled = on;
+    $('st-conn').textContent = on ? `${$('port').value} @ ${$('baud').value} baud` : 'Disconnected';
+    append('sys', on ? `── Connected: ${$('port').value} @ ${$('baud').value} baud ──` : '── Disconnected ──');
+    if(on){ $('tx').focus(); startDemo(); } else stopDemo();
+  }
+
+  /* fake device — periodic sensor stream */
+  function startDemo(){
+    const lines = [
+      () => `[BOOT] device ready, fw v2.3.1`,
+      () => `temp=${(24+Math.sin(t/8)*3+Math.random()).toFixed(2)}C  hum=${(48+Math.cos(t/10)*6+Math.random()*2).toFixed(1)}%`,
+      () => `accel x=${(Math.random()*2-1).toFixed(3)} y=${(Math.random()*2-1).toFixed(3)} z=${(0.98+Math.random()*0.04).toFixed(3)}`,
+      () => `adc[0]=${Math.floor(Math.random()*4096)} adc[1]=${Math.floor(Math.random()*4096)}`,
+      () => `rssi=${-(40+Math.floor(Math.random()*50))}dBm  pkt=${1000+t}`,
+    ];
+    let first = true;
+    demoTimer = setInterval(() => {
+      const n = first ? 1 : (1+Math.floor(Math.random()*2));
+      for(let i=0;i<n;i++){
+        const line = first ? lines[0]() : lines[1+Math.floor(Math.random()*(lines.length-1))]();
+        first = false;
+        rxBytes += enc.encode(line).length + 1;
+        $('st-rx').textContent = rxBytes;
+        append('rx', line);
+      }
+      t++;
+    }, 800);
+  }
+  function stopDemo(){ if(demoTimer){ clearInterval(demoTimer); demoTimer = null } }
+
+  function demoEcho(cmd){
+    setTimeout(() => {
+      let resp;
+      if(/^AT$/i.test(cmd)) resp = 'OK';
+      else if(/^help$/i.test(cmd)) resp = 'cmds: AT, status, reset, help';
+      else if(/^status$/i.test(cmd)) resp = `status: running, uptime ${Math.floor(performance.now()/1000)}s`;
+      else if(/^reset$/i.test(cmd)) resp = '[BOOT] device ready, fw v2.3.1';
+      else resp = 'echo: ' + cmd;
+      rxBytes += enc.encode(resp).length + 1;
+      $('st-rx').textContent = rxBytes;
+      append('rx', resp);
+    }, 120);
+  }
+
+  /* HEX parser (tiny, lenient) */
+  function parseHex(s){
+    const cleaned = s.replace(/0x/gi,'').replace(/[\s,:;\-_]+/g,' ').trim();
+    if(!cleaned) return new Uint8Array();
+    const toks = cleaned.split(/\s+/);
+    const out = [];
+    for(const t of toks){
+      if(t.length % 2 !== 0) throw new Error(`Token '${t}' has odd hex digits`);
+      for(let i=0;i<t.length;i+=2){
+        const v = parseInt(t.substr(i,2),16);
+        if(isNaN(v)) throw new Error(`Invalid hex '${t.substr(i,2)}'`);
+        out.push(v);
+      }
+    }
+    return new Uint8Array(out);
+  }
+
+  function escAscii(bytes){
+    let s = '';
+    for(const b of bytes){
+      if(b===0x5C) s+='\\\\';
+      else if(b===0x0A) s+='\\n';
+      else if(b===0x0D) s+='\\r';
+      else if(b===0x09) s+='\\t';
+      else if(b>=0x20 && b<=0x7E) s+=String.fromCharCode(b);
+      else s+='\\x'+b.toString(16).toUpperCase().padStart(2,'0');
+    }
+    return s;
+  }
+
+  function buildPayload(){
+    const ending = ($('ending').value || '').replace('\\n','\n').replace('\\r','\r');
+    if(mode === 'text'){
+      const raw = $('tx').value.replace(/[\r\n]+$/, '');
+      const bytes = enc.encode(raw + ending);
+      return {bytes, logRaw:raw};
+    } else {
+      try {
+        const parsed = parseHex($('tx').value);
+        const bytes = new Uint8Array(parsed.length + ending.length);
+        bytes.set(parsed, 0);
+        bytes.set(enc.encode(ending), parsed.length);
+        return {bytes, logRaw:null};
+      } catch(e){ return {error: e.message} }
+    }
+  }
+
+  function updatePreview(){
+    const p = buildPayload();
+    if(p.error){
+      $('prev-ascii').textContent = ''; $('prev-ascii').className = 'val err';
+      $('prev-hex').textContent = 'error: '+p.error; $('prev-hex').className = 'val err';
+      return;
+    }
+    $('prev-ascii').className = 'val';
+    $('prev-hex').className = 'val';
+    if(!p.bytes.length){
+      $('prev-ascii').textContent='(empty)'; $('prev-hex').textContent='(empty)';
+    } else {
+      $('prev-ascii').textContent = escAscii(p.bytes);
+      $('prev-hex').textContent = toHex(p.bytes);
+    }
+  }
+
+  function doSend(){
+    if(!connected) return;
+    const p = buildPayload();
+    if(p.error){ append('err', 'Hex parse error: ' + p.error); return }
+    if(!p.bytes.length) return;
+    txBytes += p.bytes.length; $('st-tx').textContent = txBytes;
+    if(mode === 'text') append('tx', p.logRaw || ''); else append('tx', toHex(p.bytes));
+    if(mode === 'text' && p.logRaw) demoEcho(p.logRaw);
+  }
+
+  /* events */
+  $('connect').addEventListener('click', () => setConnected(!connected));
+  $('send-btn').addEventListener('click', doSend);
+  $('tx').addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); doSend(); }
+  });
+  $('tx').addEventListener('input', updatePreview);
+  $('ending').addEventListener('change', updatePreview);
+
+  $('m-text').addEventListener('click', () => { mode='text'; $('m-text').classList.add('active'); $('m-hex').classList.remove('active'); $('tx').placeholder='Enter to send · Shift+Enter for newline'; updatePreview(); });
+  $('m-hex').addEventListener('click',  () => { mode='hex';  $('m-hex').classList.add('active'); $('m-text').classList.remove('active'); $('tx').placeholder='Hex bytes, e.g. AA 55 01 00 FF'; updatePreview(); });
+
+  $('tg-ascii').addEventListener('click', () => { showHex=false; $('tg-ascii').classList.add('active'); $('tg-hex').classList.remove('active'); rerenderConsole(); });
+  $('tg-hex').addEventListener('click',  () => { showHex=true;  $('tg-hex').classList.add('active'); $('tg-ascii').classList.remove('active'); rerenderConsole(); });
+
+  function rerenderConsole(){
+    [...con.querySelectorAll('.ln.rx .data, .ln.tx .data')].forEach(el => {
+      const txt = el.dataset.raw || el.textContent;
+      el.dataset.raw = el.dataset.raw || txt;
+      const bytes = enc.encode(el.dataset.raw);
+      el.textContent = showHex ? toHex(bytes) : el.dataset.raw;
+    });
+  }
+
+  updatePreview();
+})();
+</script>
+</body>
+</html>
