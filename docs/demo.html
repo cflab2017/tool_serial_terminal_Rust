@@ -248,27 +248,39 @@
       width: 0%; transition: width .3s linear;
     }
 
-    /* Synced narration subtitles under the window */
+    /* Synced narration subtitles under the window (KR + EN) */
     .subtitle-box {
       width: min(980px, 100%);
       margin-top: 14px;
-      min-height: 56px;
+      min-height: 78px;
       padding: 10px 18px;
       background: rgba(0, 0, 0, 0.55);
       border: 1px solid var(--border);
       border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
       text-align: center;
-      font-family: var(--kor);
-      font-size: 15px;
-      line-height: 1.5;
-      color: var(--text);
-      letter-spacing: 0.01em;
     }
     .subtitle-text {
       transition: opacity 0.25s ease;
+      width: 100%;
+    }
+    .sub-kr {
+      font-family: var(--kor);
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .sub-en {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.02em;
     }
     .subtitle-text .accent { color: var(--amber); font-weight: 700; }
+    .sub-en .accent { color: var(--amber-dim); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -363,7 +375,10 @@
   </div>
 
   <div class="subtitle-box">
-    <span class="subtitle-text" id="subtitle">시연을 시작합니다…</span>
+    <div class="subtitle-text" id="subtitle">
+      <div class="sub-kr" id="sub-kr">시연을 시작합니다…</div>
+      <div class="sub-en" id="sub-en">Starting the demo…</div>
+    </div>
   </div>
 
   <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
@@ -525,15 +540,18 @@ function parseHex(s) {
 
 function showPopup(on) { $("popup").classList.toggle("is-open", !!on); }
 
-/* Narration subtitle helper (fade through) */
+/* Narration subtitle helper (fade through, KR + EN at the same time) */
 let _subToken = 0;
-async function setSub(html) {
+async function setSub(sub) {
   const el = $("subtitle");
   const my = ++_subToken;
   el.style.opacity = "0";
   await sleep(180);
   if (my !== _subToken) return;
-  el.innerHTML = html;
+  const kr = (sub && sub.kr) || "";
+  const en = (sub && sub.en) || "";
+  $("sub-kr").innerHTML = kr;
+  $("sub-en").innerHTML = en;
   el.style.opacity = "1";
 }
 
@@ -541,77 +559,123 @@ async function setSub(html) {
 const SCENARIO = [
   // Scene 1: Connect + auto RX stream (~12s)
   {
-    caption: "Scene 1 / 포트 연결 — Click [Connect]",
+    caption: "Scene 1 / 포트 연결 — Click [Connect]   ·   Connect to a serial port",
     duration: 12000,
     actions: [
-      { at: 200,  sub: '먼저 시리얼 포트와 보율을 선택합니다.',
-                  fn: async () => { setConnected(false); clearConsole(); rxBytes=0; txBytes=0; $("st-rx").textContent='0'; $("st-tx").textContent='0'; setMode('text'); setDisplayHex(false); showPopup(false); append('sys', '· Ready. Select a port and click [Connect].'); } },
-      { at: 1500, sub: '<span class="accent">Connect</span> 버튼을 눌러 연결을 시작합니다.',
-                  fn: async () => flash("connect-btn") },
-      { at: 2000, sub: '연결되면 좌측 <span class="accent">●</span> LED 가 초록으로 바뀝니다.',
-                  fn: async () => { setConnected(true); append('sys', '── Connected: COM3 @ 115200 baud ──'); } },
-      { at: 3000, sub: '장치가 보낸 BOOT 메시지가 RX (초록 ◄) 로 표시됩니다.',
-                  fn: async () => appendRx('[BOOT] device ready, fw v2.3.1') },
-      { at: 4000, sub: '센서 데이터가 실시간으로 한 줄씩 흘러나옵니다.',
-                  fn: async () => appendRx('temp=24.32C  hum=48.2%') },
-      { at: 5200, sub: '타임스탬프(시:분:초.밀리초) 와 ◄ 화살표가 자동으로 붙습니다.',
-                  fn: async () => appendRx('accel x=0.013 y=-0.027 z=0.998') },
-      { at: 6500, sub: '하단 상태바에 RX 누적 바이트 수가 실시간 갱신됩니다.',
-                  fn: async () => appendRx('adc[0]=2034  adc[1]=3911') },
+      { at: 200,
+        sub: { kr: '먼저 시리얼 포트와 보율을 선택합니다.',
+               en: 'Pick a serial port and baud rate to start.' },
+        fn: async () => { setConnected(false); clearConsole(); rxBytes=0; txBytes=0; $("st-rx").textContent='0'; $("st-tx").textContent='0'; setMode('text'); setDisplayHex(false); showPopup(false); append('sys', '· Ready. Select a port and click [Connect].'); } },
+      { at: 1500,
+        sub: { kr: '<span class="accent">Connect</span> 버튼을 눌러 연결을 시작합니다.',
+               en: 'Click the <span class="accent">Connect</span> button to open the port.' },
+        fn: async () => flash("connect-btn") },
+      { at: 2000,
+        sub: { kr: '연결되면 좌측 <span class="accent">●</span> LED 가 초록으로 바뀝니다.',
+               en: 'Once connected, the left <span class="accent">●</span> LED turns green.' },
+        fn: async () => { setConnected(true); append('sys', '── Connected: COM3 @ 115200 baud ──'); } },
+      { at: 3000,
+        sub: { kr: '장치가 보낸 BOOT 메시지가 RX (초록 ◄) 로 표시됩니다.',
+               en: 'The device\'s BOOT message arrives as RX (green ◄).' },
+        fn: async () => appendRx('[BOOT] device ready, fw v2.3.1') },
+      { at: 4000,
+        sub: { kr: '센서 데이터가 실시간으로 한 줄씩 흘러나옵니다.',
+               en: 'Sensor data streams in line by line in real time.' },
+        fn: async () => appendRx('temp=24.32C  hum=48.2%') },
+      { at: 5200,
+        sub: { kr: '타임스탬프(시:분:초.밀리초) 와 ◄ 화살표가 자동으로 붙습니다.',
+               en: 'Timestamps (HH:MM:SS.mmm) and the ◄ arrow are added automatically.' },
+        fn: async () => appendRx('accel x=0.013 y=-0.027 z=0.998') },
+      { at: 6500,
+        sub: { kr: '하단 상태바에 RX 누적 바이트 수가 실시간 갱신됩니다.',
+               en: 'The footer status bar updates the total RX byte count live.' },
+        fn: async () => appendRx('adc[0]=2034  adc[1]=3911') },
       { at: 7800, fn: async () => appendRx('rssi=-58dBm  pkt=1001') },
-      { at: 9000, sub: '연결 중에도 UI 가 멈추지 않습니다 — UI/워커 스레드 분리.',
-                  fn: async () => appendRx('temp=24.41C  hum=48.5%') },
+      { at: 9000,
+        sub: { kr: '연결 중에도 UI 가 멈추지 않습니다 — UI/워커 스레드 분리.',
+               en: 'The UI never blocks — UI and serial worker run on separate threads.' },
+        fn: async () => appendRx('temp=24.41C  hum=48.5%') },
       { at: 10200, fn: async () => appendRx('rssi=-61dBm  pkt=1002') },
     ],
   },
 
   // Scene 2: TEXT command send (~10s)
   {
-    caption: "Scene 2 / TEXT 모드로 명령 송신 — Enter to send",
+    caption: "Scene 2 / TEXT 모드로 명령 송신 — Enter to send   ·   Send a TEXT command",
     duration: 10000,
     actions: [
-      { at: 200,  sub: '오른쪽 송신 패널에서 <span class="accent">TEXT</span> 모드로 명령을 입력합니다.',
-                  fn: async () => { setMode('text'); $("typed").textContent=''; updatePreview(); } },
-      { at: 800,  sub: '입력하는 동안 <span class="accent">WILL SEND</span> 가 실제 송신 바이트를 미리 보여줍니다.',
-                  fn: async () => typeIntoEditor('status', 90) },
-      { at: 2500, sub: 'Enter 또는 <span class="accent">Send</span> 버튼으로 송신합니다.',
-                  fn: async () => flash("send-btn") },
-      { at: 3000, sub: '송신 내역은 TX (앰버 ►) 로 콘솔에 기록됩니다.',
-                  fn: async () => { appendTx('status'); } },
-      { at: 3600, sub: '장치가 응답을 보내면 RX (초록 ◄) 로 표시됩니다.',
-                  fn: async () => appendRx('status: running, uptime 1287s') },
-      { at: 5000, sub: '입력 박스는 자동으로 비워지지 않습니다 — 같은 명령 반복 송신에 편리.',
-                  fn: async () => { $("typed").textContent=''; updatePreview(); } },
-      { at: 5400, sub: 'ENDING 옵션으로 줄끝을 자동 추가 (CRLF / LF / CR / None).',
-                  fn: async () => typeIntoEditor('AT', 120) },
+      { at: 200,
+        sub: { kr: '오른쪽 송신 패널에서 <span class="accent">TEXT</span> 모드로 명령을 입력합니다.',
+               en: 'Type a command in <span class="accent">TEXT</span> mode in the right SEND panel.' },
+        fn: async () => { setMode('text'); $("typed").textContent=''; updatePreview(); } },
+      { at: 800,
+        sub: { kr: '입력하는 동안 <span class="accent">WILL SEND</span> 가 실제 송신 바이트를 미리 보여줍니다.',
+               en: '<span class="accent">WILL SEND</span> previews the exact bytes you\'ll send, as you type.' },
+        fn: async () => typeIntoEditor('status', 90) },
+      { at: 2500,
+        sub: { kr: 'Enter 또는 <span class="accent">Send</span> 버튼으로 송신합니다.',
+               en: 'Press Enter or click <span class="accent">Send</span> to transmit.' },
+        fn: async () => flash("send-btn") },
+      { at: 3000,
+        sub: { kr: '송신 내역은 TX (앰버 ►) 로 콘솔에 기록됩니다.',
+               en: 'Sent data is logged as TX (amber ►) in the console.' },
+        fn: async () => { appendTx('status'); } },
+      { at: 3600,
+        sub: { kr: '장치가 응답을 보내면 RX (초록 ◄) 로 표시됩니다.',
+               en: 'The device\'s reply shows up as RX (green ◄).' },
+        fn: async () => appendRx('status: running, uptime 1287s') },
+      { at: 5000,
+        sub: { kr: '입력 박스는 자동으로 비워지지 않습니다 — 같은 명령 반복 송신에 편리.',
+               en: 'The input box doesn\'t auto-clear — handy for resending the same command.' },
+        fn: async () => { $("typed").textContent=''; updatePreview(); } },
+      { at: 5400,
+        sub: { kr: 'ENDING 옵션으로 줄끝을 자동 추가 (CRLF / LF / CR / None).',
+               en: 'The ENDING option appends a line terminator (CRLF / LF / CR / None).' },
+        fn: async () => typeIntoEditor('AT', 120) },
       { at: 6600, fn: async () => flash("send-btn") },
       { at: 7000, fn: async () => { appendTx('AT'); } },
-      { at: 7500, sub: '간단한 명령부터 멀티라인까지 그대로 송신할 수 있습니다.',
-                  fn: async () => appendRx('OK') },
+      { at: 7500,
+        sub: { kr: '간단한 명령부터 멀티라인까지 그대로 송신할 수 있습니다.',
+               en: 'From single commands to multi-line payloads — send exactly what you type.' },
+        fn: async () => appendRx('OK') },
       { at: 9000, fn: async () => appendRx('temp=24.49C  hum=48.7%') },
     ],
   },
 
   // Scene 3: HEX mode send (~12s)
   {
-    caption: "Scene 3 / HEX 모드로 바이너리 프레임 송신",
+    caption: "Scene 3 / HEX 모드로 바이너리 프레임 송신   ·   Send raw bytes in HEX mode",
     duration: 12000,
     actions: [
-      { at: 300,  sub: 'STX/ETX 같은 바이너리 프레임은 <span class="accent">HEX</span> 모드로 보냅니다.',
-                  fn: async () => { $("typed").textContent=''; flash("m-hex"); } },
+      { at: 300,
+        sub: { kr: 'STX/ETX 같은 바이너리 프레임은 <span class="accent">HEX</span> 모드로 보냅니다.',
+               en: 'Send binary frames like STX/ETX using <span class="accent">HEX</span> mode.' },
+        fn: async () => { $("typed").textContent=''; flash("m-hex"); } },
       { at: 900,  fn: async () => setMode('hex') },
-      { at: 1500, sub: '<span class="accent">02 41 35 30 30 03</span> — STX, A, 5, 0, 0, ETX 입력.',
-                  fn: async () => typeIntoEditor('02 41 35 30 30 03', 65) },
-      { at: 5000, sub: 'WILL SEND 가 ASCII 와 HEX 두 줄을 동시에 보여줍니다 (ENDING 포함).',
-                  fn: async () => flash("send-btn") },
-      { at: 5500, sub: '송신된 8 바이트가 TX 로 기록 — 의도 그대로 wire 에 나갑니다.',
-                  fn: async () => { appendTx('02 41 35 30 30 03 0D 0A'); } },
-      { at: 6200, sub: '장치가 <span class="accent">0x06 (ACK)</span> 으로 응답합니다.',
-                  fn: async () => appendRx('06') },
-      { at: 7200, sub: '이어서 동일한 프레임을 에코로 되돌려줍니다.',
-                  fn: async () => appendRx('02 41 35 30 30 03') },
-      { at: 8500, sub: '다시 TEXT 모드로 — 모드 전환은 언제든 가능.',
-                  fn: async () => { $("typed").textContent=''; flash("m-text"); } },
+      { at: 1500,
+        sub: { kr: '<span class="accent">02 41 35 30 30 03</span> — STX, A, 5, 0, 0, ETX 입력.',
+               en: '<span class="accent">02 41 35 30 30 03</span> — STX, A, 5, 0, 0, ETX.' },
+        fn: async () => typeIntoEditor('02 41 35 30 30 03', 65) },
+      { at: 5000,
+        sub: { kr: 'WILL SEND 가 ASCII 와 HEX 두 줄을 동시에 보여줍니다 (ENDING 포함).',
+               en: 'WILL SEND shows ASCII and HEX rows together (ENDING included).' },
+        fn: async () => flash("send-btn") },
+      { at: 5500,
+        sub: { kr: '송신된 8 바이트가 TX 로 기록 — 의도 그대로 wire 에 나갑니다.',
+               en: 'All 8 bytes logged as TX — exactly what hits the wire.' },
+        fn: async () => { appendTx('02 41 35 30 30 03 0D 0A'); } },
+      { at: 6200,
+        sub: { kr: '장치가 <span class="accent">0x06 (ACK)</span> 으로 응답합니다.',
+               en: 'The device replies with <span class="accent">0x06 (ACK)</span>.' },
+        fn: async () => appendRx('06') },
+      { at: 7200,
+        sub: { kr: '이어서 동일한 프레임을 에코로 되돌려줍니다.',
+               en: 'Then it echoes back the same frame.' },
+        fn: async () => appendRx('02 41 35 30 30 03') },
+      { at: 8500,
+        sub: { kr: '다시 TEXT 모드로 — 모드 전환은 언제든 가능.',
+               en: 'Back to TEXT mode — switch any time.' },
+        fn: async () => { $("typed").textContent=''; flash("m-text"); } },
       { at: 9000, fn: async () => setMode('text') },
       { at: 10000, fn: async () => appendRx('rssi=-60dBm  pkt=1004') },
     ],
@@ -619,38 +683,58 @@ const SCENARIO = [
 
   // Scene 4: Display ASCII <-> HEX toggle (~7s)
   {
-    caption: "Scene 4 / 콘솔 표시를 ASCII ↔ HEX 로 전환",
+    caption: "Scene 4 / 콘솔 표시를 ASCII ↔ HEX 로 전환   ·   Toggle console display",
     duration: 7000,
     actions: [
-      { at: 200,  sub: '둘째 툴바의 <span class="accent">HEX</span> 토글로 콘솔 표시를 hex 덤프로 바꿉니다.',
-                  fn: async () => flash("tg-hex") },
-      { at: 700,  sub: '이전 라인까지 모두 즉시 재렌더 — raw 바이트를 그대로 보관하기 때문.',
-                  fn: async () => setDisplayHex(true) },
-      { at: 3500, sub: '다시 <span class="accent">ASCII</span> 토글로 원래 보기로 복귀.',
-                  fn: async () => flash("tg-ascii") },
-      { at: 4000, sub: '표시 방식만 바뀌고 데이터는 손실 없이 보존됩니다.',
-                  fn: async () => setDisplayHex(false) },
+      { at: 200,
+        sub: { kr: '둘째 툴바의 <span class="accent">HEX</span> 토글로 콘솔 표시를 hex 덤프로 바꿉니다.',
+               en: 'The <span class="accent">HEX</span> toggle on the second toolbar switches the console to a hex dump.' },
+        fn: async () => flash("tg-hex") },
+      { at: 700,
+        sub: { kr: '이전 라인까지 모두 즉시 재렌더 — raw 바이트를 그대로 보관하기 때문.',
+               en: 'Previous lines re-render instantly — raw bytes are kept intact.' },
+        fn: async () => setDisplayHex(true) },
+      { at: 3500,
+        sub: { kr: '다시 <span class="accent">ASCII</span> 토글로 원래 보기로 복귀.',
+               en: 'Toggle back to <span class="accent">ASCII</span> to return to the original view.' },
+        fn: async () => flash("tg-ascii") },
+      { at: 4000,
+        sub: { kr: '표시 방식만 바뀌고 데이터는 손실 없이 보존됩니다.',
+               en: 'Only the display changes — the underlying data is preserved.' },
+        fn: async () => setDisplayHex(false) },
       { at: 5500, fn: async () => appendRx('temp=24.55C  hum=48.9%') },
     ],
   },
 
   // Scene 5: Converter popup (~9s)
   {
-    caption: "Scene 5 / ASCII ↔ HEX 변환기 팝업",
+    caption: "Scene 5 / ASCII ↔ HEX 변환기 팝업   ·   ASCII ↔ HEX converter popup",
     duration: 9000,
     actions: [
-      { at: 200,  sub: '둘째 툴바 우측의 <span class="accent">ASCII ↔ HEX Converter</span> 버튼.',
-                  fn: async () => flash("conv-btn") },
-      { at: 700,  sub: '양쪽 박스 중 어디든 타이핑하면 반대편이 자동 변환됩니다.',
-                  fn: async () => { showPopup(true); $("popup-ascii").textContent=''; $("popup-hex").textContent=''; } },
-      { at: 1300, sub: '비printable 바이트는 <span class="accent">\\xNN</span> 형식으로 — round-trip 정확.',
-                  fn: async () => typeInto("popup-ascii", "\\x02A50000\\x03", 70) },
-      { at: 4500, sub: 'HEX 박스: <span class="accent">02 41 35 30 30 30 30 03</span> (8 B).',
-                  fn: async () => { $("popup-hex").textContent = '02 41 35 30 30 30 30 03'; } },
-      { at: 6500, sub: '결과를 송신 박스로 보내 바로 송신할 수도 있습니다.',
-                  fn: async () => showPopup(false) },
-      { at: 7200, sub: '시연 종료 — Replay 버튼으로 다시 보실 수 있습니다.',
-                  fn: async () => appendRx('rssi=-59dBm  pkt=1005') },
+      { at: 200,
+        sub: { kr: '둘째 툴바 우측의 <span class="accent">ASCII ↔ HEX Converter</span> 버튼.',
+               en: 'The <span class="accent">ASCII ↔ HEX Converter</span> button on the right of the second toolbar.' },
+        fn: async () => flash("conv-btn") },
+      { at: 700,
+        sub: { kr: '양쪽 박스 중 어디든 타이핑하면 반대편이 자동 변환됩니다.',
+               en: 'Type in either box — the other side converts automatically.' },
+        fn: async () => { showPopup(true); $("popup-ascii").textContent=''; $("popup-hex").textContent=''; } },
+      { at: 1300,
+        sub: { kr: '비printable 바이트는 <span class="accent">\\xNN</span> 형식으로 — round-trip 정확.',
+               en: 'Non-printable bytes show as <span class="accent">\\xNN</span> — round-trips are exact.' },
+        fn: async () => typeInto("popup-ascii", "\\x02A50000\\x03", 70) },
+      { at: 4500,
+        sub: { kr: 'HEX 박스: <span class="accent">02 41 35 30 30 30 30 03</span> (8 B).',
+               en: 'HEX box: <span class="accent">02 41 35 30 30 30 30 03</span> (8 B).' },
+        fn: async () => { $("popup-hex").textContent = '02 41 35 30 30 30 30 03'; } },
+      { at: 6500,
+        sub: { kr: '결과를 송신 박스로 보내 바로 송신할 수도 있습니다.',
+               en: 'You can push the result straight into the send box and transmit.' },
+        fn: async () => showPopup(false) },
+      { at: 7200,
+        sub: { kr: '시연 종료 — Replay 버튼으로 다시 보실 수 있습니다.',
+               en: 'Demo complete — use the Replay button to watch again.' },
+        fn: async () => appendRx('rssi=-59dBm  pkt=1005') },
     ],
   },
 ];
@@ -670,8 +754,11 @@ function runScene(idx) {
   timers.push(setTimeout(() => {
     if (idx + 1 < SCENARIO.length) runScene(idx + 1);
     else timers.push(setTimeout(() => {
-      $("caption").textContent = "✓ 시연 종료 — 아래 ↻ 버튼으로 다시 재생";
-      setSub('전체 5개 scene 을 모두 재생했습니다. <span class="accent">↻ 다시 재생</span> 을 눌러 처음부터 보실 수 있어요.');
+      $("caption").textContent = "✓ 시연 종료 — Replay 로 다시 재생   ·   Demo complete — click Replay";
+      setSub({
+        kr: '전체 5개 scene 을 모두 재생했습니다. <span class="accent">↻ 다시 재생</span> 을 눌러 처음부터 보실 수 있어요.',
+        en: 'All 5 scenes played. Click <span class="accent">↻ Replay</span> to start from the beginning.'
+      });
       $("progress").style.width = "100%";
     }, 400));
   }, scene.duration));
