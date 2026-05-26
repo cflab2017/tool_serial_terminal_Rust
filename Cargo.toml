@@ -1,0 +1,20 @@
+[package]
+name = "cnterminal"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = { version = "0.4.44", default-features = false, features = ["clock"] }
+eframe = { version = "0.34.2", default-features = false, features = ["default_fonts", "wgpu", "wayland", "x11"] }
+rfd = "0.17.2"
+serialport = "4.9.0"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[build-dependencies]
+embed-resource = "3.0.9"
