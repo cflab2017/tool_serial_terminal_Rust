@@ -1,366 +1,627 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CNTerminal — Live Demo</title>
-<style>
-  :root {
-    --bg:#0b0a08; --panel:#141210; --panel2:#1c1916;
-    --line:#2a251e; --text:#f3e7cf; --muted:#7a6f5c;
-    --amber:#ffb000; --amber-dim:#b8801f; --amber-glow:rgba(255,176,0,.35);
-    --green:#5ddc7a; --red:#e0876a;
-    --rx:#9ad8b0; --tx:#e8c98a;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Consolas','Menlo','JetBrains Mono',monospace}
-  html,body{height:100%}
-  body{
-    background:radial-gradient(ellipse 120% 80% at 50% -10%, rgba(255,176,0,.06), transparent 60%), var(--bg);
-    color:var(--text); display:flex; flex-direction:column;
-    padding:10px; min-height:100vh; position:relative; overflow:hidden;
-  }
-  /* subtle CRT scanlines */
-  body::after{
-    content:""; position:fixed; inset:0; pointer-events:none; z-index:99;
-    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.16) 3px, rgba(0,0,0,0) 4px);
-    mix-blend-mode:multiply;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CNTerminal — 시연 영상</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Gowun+Dodum&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #0b0a08;
+      --panel: #141210;
+      --panel-2: #1c1916;
+      --border: #2a241d;
+      --line: #2a251e;
+      --amber: #ffb000;
+      --amber-dim: #b87b00;
+      --text: #f3e7cf;
+      --muted: #8a7d63;
+      --green: #5ddc7a;
+      --red: #e0876a;
+      --rx: #9ad8b0;
+      --tx: #e8c98a;
+      --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      --kor: "Gowun Dodum", "Malgun Gothic", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; min-height: 100vh;
+      background: #050403;
+      color: var(--text);
+      font-family: var(--kor);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
 
-  .titlebar{font-size:11px; color:var(--muted); padding:4px 8px; text-align:center; border-bottom:1px solid var(--line); margin-bottom:8px}
+    .caption {
+      font-family: var(--mono); font-size: 13px;
+      color: var(--amber-dim); text-align: center;
+      margin-bottom: 18px; min-height: 20px;
+      letter-spacing: 0.06em;
+    }
 
-  /* top bar */
-  .top{display:flex; align-items:center; gap:10px; padding:6px 8px; border-bottom:1px solid var(--line); flex-wrap:wrap}
-  .brand{font-weight:800; color:var(--amber); font-size:14px; letter-spacing:.02em; text-shadow:0 0 12px var(--amber-glow); white-space:nowrap}
-  .led{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--red); margin-right:6px; vertical-align:middle; box-shadow:0 0 8px var(--red)}
-  .led.on{background:var(--green); box-shadow:0 0 10px var(--green); animation:pulse 2s infinite}
-  @keyframes pulse{50%{opacity:.5}}
-  .grp{display:flex; align-items:center; gap:6px}
-  .grp label{font-size:10px; color:var(--amber-dim); letter-spacing:.1em; text-transform:uppercase}
-  select, input[type=text]{
-    background:var(--panel2); border:1px solid var(--line); color:var(--text);
-    font-family:inherit; font-size:12px; padding:6px 8px; border-radius:4px; outline:none;
-  }
-  input[type=text]:focus, select:focus{border-color:var(--amber-dim)}
-  .btn{
-    background:transparent; border:1px solid var(--line); color:var(--text);
-    font-family:inherit; font-size:12px; padding:6px 12px; border-radius:5px;
-    cursor:pointer; transition:all .15s; white-space:nowrap;
-  }
-  .btn:hover{border-color:var(--amber-dim)}
-  .btn.primary{background:var(--amber); color:#1a1304; border-color:var(--amber); font-weight:700}
-  .btn.primary:hover{box-shadow:0 0 18px var(--amber-glow)}
-  .btn.primary.on{background:transparent; color:var(--red); border-color:#7a4a3a; font-weight:500}
+    .window {
+      width: min(980px, 100%);
+      background: var(--bg);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px var(--border),
+        0 30px 80px rgba(255,176,0,0.08),
+        0 8px 24px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .titlebar {
+      background: #1a1814;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 8px 14px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .titlebar::before { content: "●"; color: #4a78ff; font-size: 12px; }
+    .titlebar .controls { margin-left: auto; display: flex; gap: 14px; color: var(--muted); font-family: monospace; }
 
-  .tg{
-    background:transparent; border:1px solid var(--line); color:var(--muted);
-    font-family:inherit; font-size:11px; padding:5px 10px; border-radius:5px; cursor:pointer;
-  }
-  .tg.active{border-color:var(--amber-dim); color:var(--amber); background:rgba(255,176,0,.06)}
-  .tg:hover{color:var(--text)}
+    .scanlines {
+      position: absolute; inset: 32px 0 0 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,176,0,0.03) 0px,
+        rgba(255,176,0,0.03) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      z-index: 10;
+      mix-blend-mode: screen;
+    }
 
-  /* main area: console (left) + send (right) */
-  .main{flex:1; display:flex; gap:8px; margin-top:8px; min-height:0}
-  .console{
-    flex:1; background:var(--panel); border:1px solid var(--line);
-    border-radius:6px; padding:10px; overflow-y:auto; font-size:12px;
-    line-height:1.4; min-height:300px;
-  }
-  .console::-webkit-scrollbar{width:8px}
-  .console::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
-  .console::-webkit-scrollbar-thumb:hover{background:var(--amber-dim)}
-  .ln{display:flex; gap:6px; padding:0}
-  .ln .ts{color:var(--muted); font-size:10px; flex-shrink:0; opacity:.8}
-  .ln .arrow{flex-shrink:0; font-weight:700; width:12px}
-  .ln.rx .arrow, .ln.rx .data{color:var(--rx)}
-  .ln.tx .arrow, .ln.tx .data{color:var(--tx)}
-  .ln.sys .data{color:var(--muted); font-style:italic}
-  .ln.err .arrow, .ln.err .data{color:var(--red)}
-  .hint{color:#4f473a; text-align:center; padding-top:30px; font-size:12px; line-height:1.7}
-  .hint b{color:var(--amber-dim)}
+    /* Toolbars */
+    .toolbar1, .toolbar2 {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .toolbar2 { padding: 6px 14px; }
 
-  .send{
-    width:280px; min-width:220px; background:var(--bg);
-    display:flex; flex-direction:column; gap:6px; padding-left:6px;
-  }
-  .send-head{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-  .send-head .label{color:var(--amber); font-weight:700; font-size:11px}
-  .send textarea{
-    background:var(--panel2); color:var(--text); border:1px solid var(--line);
-    border-radius:5px; padding:8px; font-family:inherit; font-size:12px;
-    resize:vertical; min-height:80px; outline:none;
-  }
-  .send textarea:focus{border-color:var(--amber-dim)}
-  .preview{
-    background:var(--panel2); border:1px solid var(--line); border-radius:4px;
-    padding:6px 8px; font-size:11px; line-height:1.5;
-  }
-  .preview .row{display:flex; gap:8px}
-  .preview .key{color:var(--amber-dim); width:42px; flex-shrink:0}
-  .preview .val{color:var(--text); word-break:break-all}
-  .preview .err{color:var(--red)}
+    .brand {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 800; color: var(--amber); letter-spacing: 0.02em;
+      text-shadow: 0 0 12px rgba(255,176,0,.35);
+      font-size: 14px; margin-right: 6px;
+    }
+    .led {
+      display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+      background: var(--red); box-shadow: 0 0 8px var(--red);
+    }
+    .led.on { background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { opacity: .5; } }
 
-  .footer{
-    display:flex; align-items:center; gap:12px; padding:6px 8px;
-    border-top:1px solid var(--line); font-size:11px; color:var(--muted);
-    margin-top:8px; flex-wrap:wrap;
-  }
-  .footer .v{color:var(--text)}
-  .footer .rxv{color:var(--rx)}
-  .footer .txv{color:var(--tx)}
-  .spacer{flex:1}
+    .label { font-size: 10px; color: var(--amber-dim); letter-spacing: 0.1em; text-transform: uppercase; }
+    .mock-select, .mock-input {
+      background: var(--panel-2); border: 1px solid var(--border);
+      color: var(--text); padding: 5px 8px; border-radius: 4px;
+      font-family: var(--mono); font-size: 11px; min-width: 60px;
+    }
+    .mock-input { min-width: 70px; }
 
-  /* demo banner */
-  .demo-banner{
-    position:absolute; top:8px; right:12px; z-index:100;
-    background:rgba(255,176,0,.12); border:1px solid var(--amber-dim);
-    color:var(--amber); padding:3px 10px; border-radius:99px; font-size:10px;
-    letter-spacing:.08em; pointer-events:none;
-  }
-</style>
+    .btn, .btn-primary, .tg {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
+      padding: 6px 12px; border-radius: 5px;
+      background: transparent; border: 1px solid var(--line); color: var(--text);
+      transition: all .25s;
+    }
+    .btn-primary {
+      background: var(--amber); color: #1a1304; border-color: var(--amber); font-weight: 700;
+    }
+    .btn-primary.on { background: transparent; color: var(--red); border-color: #7a4a3a; font-weight: 500; }
+    .tg { color: var(--muted); padding: 5px 10px; }
+    .tg.active {
+      border-color: var(--amber-dim); color: var(--amber);
+      background: rgba(255,176,0,0.06);
+    }
+    .btn.is-flash, .btn-primary.is-flash, .tg.is-flash {
+      box-shadow: 0 0 18px rgba(255,176,0,.6);
+      border-color: var(--amber);
+      transform: scale(1.04);
+    }
+    .spacer { flex: 1; }
+
+    /* Main: console (left) + send (right) */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 10px;
+      padding: 10px 14px 6px;
+    }
+    .console {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 12px;
+      min-height: 280px; max-height: 280px; overflow: auto;
+      font-family: var(--mono); font-size: 12px; line-height: 1.45;
+    }
+    .console::-webkit-scrollbar { width: 8px; }
+    .console::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    .ln { display: flex; gap: 8px; }
+    .ln .ts { color: var(--muted); font-size: 10px; flex-shrink: 0; opacity: .8; }
+    .ln .arrow { flex-shrink: 0; font-weight: 700; width: 12px; }
+    .ln.rx .arrow, .ln.rx .data { color: var(--rx); }
+    .ln.tx .arrow, .ln.tx .data { color: var(--tx); }
+    .ln.sys .data { color: var(--muted); font-style: italic; }
+    .ln.err .arrow, .ln.err .data { color: var(--red); }
+
+    .send {
+      display: flex; flex-direction: column; gap: 6px;
+      font-family: var(--mono);
+    }
+    .send-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .send-head .head-label { color: var(--amber); font-weight: 700; font-size: 11px; }
+    .editor {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px;
+      padding: 8px 10px; min-height: 70px; color: var(--text); font-size: 12px;
+      line-height: 1.5; white-space: pre-wrap; word-break: break-all;
+    }
+    .typed-cursor {
+      display: inline-block; width: 7px; height: 1em; background: var(--amber);
+      vertical-align: text-bottom; animation: blink 1s steps(1) infinite; margin-left: 2px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .preview {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 8px; font-size: 11px; line-height: 1.5;
+    }
+    .preview .head {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+      color: var(--amber-dim); font-size: 10px; letter-spacing: 0.08em;
+    }
+    .preview .head .byte { color: var(--muted); }
+    .preview .row { display: flex; gap: 8px; }
+    .preview .key { color: var(--amber-dim); width: 38px; flex-shrink: 0; font-size: 10px; }
+    .preview .val { color: var(--text); word-break: break-all; }
+    .send-actions { display: flex; gap: 6px; }
+    .send-actions .btn-primary { padding: 7px 18px; }
+
+    /* Footer */
+    .footer {
+      display: flex; align-items: center; gap: 14px;
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+    }
+    .footer .v { color: var(--text); }
+    .footer .rxv { color: var(--rx); }
+    .footer .txv { color: var(--tx); }
+
+    /* Converter popup overlay */
+    .popup-overlay {
+      position: absolute; inset: 32px 0 0 0;
+      background: rgba(0,0,0,.55);
+      display: none; align-items: center; justify-content: center;
+      z-index: 20;
+    }
+    .popup-overlay.is-open { display: flex; }
+    .popup {
+      width: 420px; background: var(--panel);
+      border: 1px solid var(--amber-dim); border-radius: 6px;
+      padding: 14px; font-family: var(--mono);
+      box-shadow: 0 12px 32px rgba(0,0,0,.6);
+    }
+    .popup h3 {
+      margin: 0 0 10px; color: var(--amber); font-size: 12px; letter-spacing: 0.08em;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .popup .x { color: var(--muted); cursor: pointer; }
+    .popup .field { margin-bottom: 8px; }
+    .popup .field .lbl { font-size: 10px; color: var(--amber-dim); margin-bottom: 4px; }
+    .popup .box {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 10px; font-size: 12px; color: var(--text); min-height: 36px;
+    }
+
+    /* Footer mini */
+    .replay {
+      margin-top: 16px;
+      font-family: var(--mono); font-size: 11px;
+      color: var(--muted); background: transparent;
+      border: 1px solid var(--border); padding: 6px 14px; border-radius: 3px;
+      cursor: pointer; transition: all .15s;
+    }
+    .replay:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+    .progress-bar {
+      width: min(980px, 100%);
+      height: 3px; background: var(--border);
+      margin-top: 14px; border-radius: 2px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--amber-dim), var(--amber));
+      width: 0%; transition: width .3s linear;
+    }
+  </style>
 </head>
 <body>
-  <div class="demo-banner">LIVE DEMO · fake serial device</div>
-  <div class="titlebar">CNTerminal v0.1.0 · by Joseph.han · coding-now.com</div>
+  <div class="caption" id="caption">시연 영상 시작…</div>
 
-  <div class="top">
-    <span class="brand"><span class="led" id="led"></span>CNTerminal</span>
-
-    <div class="grp">
-      <label>port</label>
-      <select id="port"><option>COM3</option><option>COM4</option></select>
+  <div class="window">
+    <div class="titlebar">
+      <span>CNTerminal v0.1.0  ·  by Joseph.han  ·  coding-now.com</span>
+      <span class="controls">─ ▢ ✕</span>
     </div>
-    <div class="grp">
-      <label>baud</label>
-      <input type="text" id="baud" value="115200" style="width:70px" />
+    <div class="scanlines"></div>
+
+    <!-- Toolbar 1: connection -->
+    <div class="toolbar1">
+      <span class="brand"><span class="led" id="led"></span>CNTerminal</span>
+      <span class="label">port</span>
+      <span class="mock-select" id="port-sel">COM3</span>
+      <span class="label">baud</span>
+      <span class="mock-input" id="baud-input">115200</span>
+      <button class="btn-primary" id="connect-btn">Connect</button>
     </div>
-    <button class="btn primary" id="connect">Connect</button>
 
-    <div class="spacer"></div>
+    <!-- Toolbar 2: actions -->
+    <div class="toolbar2">
+      <button class="btn" id="clear-btn">Clear</button>
+      <button class="tg active" id="tg-ascii">ASCII</button>
+      <button class="tg" id="tg-hex">HEX</button>
+      <button class="tg" id="tg-dtr">DTR</button>
+      <span class="label" style="margin-left: 4px;">font</span>
+      <span class="mock-select">13 px</span>
+      <span class="label" style="margin-left: 4px;">rx split</span>
+      <span class="mock-input" id="rxsplit" style="min-width: 36px;">0</span>
+      <span class="label">ms</span>
+      <span class="spacer"></span>
+      <button class="btn" id="conv-btn">ASCII ↔ HEX Converter</button>
+    </div>
 
-    <button class="tg active" id="tg-ascii">ASCII</button>
-    <button class="tg" id="tg-hex">HEX</button>
-  </div>
-
-  <div class="main">
-    <div class="console" id="console">
-      <div class="hint" id="hint">
-        Click <b>Connect</b> to start the fake serial stream.<br/>
-        Try typing a command (e.g. <b>status</b>, <b>help</b>, <b>AT</b>) and press Enter.
+    <!-- Main split -->
+    <div class="main">
+      <div class="console" id="console">
+        <div class="ln sys"><span class="data">· Ready. Select a port and click [Connect].</span></div>
+      </div>
+      <div class="send">
+        <div class="send-head">
+          <span class="head-label">▶ SEND</span>
+          <button class="tg active" id="m-text">TEXT</button>
+          <button class="tg" id="m-hex">HEX</button>
+          <span class="label">ending</span>
+          <span class="mock-select" id="ending-sel" style="min-width: 60px;">CRLF</span>
+        </div>
+        <div class="editor"><span id="typed"></span><span class="typed-cursor" id="caret"></span></div>
+        <div class="preview">
+          <div class="head">
+            <span>WILL SEND</span>
+            <span class="byte" id="prev-bytes">(2 B)</span>
+          </div>
+          <div class="row"><span class="key">ASCII</span><span class="val" id="prev-ascii">\r\n</span></div>
+          <div class="row"><span class="key">HEX</span><span class="val" id="prev-hex">0D 0A</span></div>
+        </div>
+        <div class="send-actions">
+          <button class="btn-primary" id="send-btn">Send</button>
+        </div>
       </div>
     </div>
 
-    <div class="send">
-      <div class="send-head">
-        <span class="label">▶ SEND</span>
-        <button class="tg active" id="m-text">TEXT</button>
-        <button class="tg" id="m-hex">HEX</button>
-        <span style="color:var(--amber-dim);font-size:10px;margin-left:auto">ENDING</span>
-        <select id="ending" style="font-size:11px;padding:3px 6px">
-          <option value="">none</option>
-          <option value="\n">LF</option>
-          <option value="\r">CR</option>
-          <option value="\r\n" selected>CRLF</option>
-        </select>
+    <!-- Footer -->
+    <div class="footer">
+      <span>STATUS: <span class="v" id="st-conn">Disconnected</span></span>
+      <span>RX: <span class="rxv" id="st-rx">0</span> B</span>
+      <span>TX: <span class="txv" id="st-tx">0</span> B</span>
+      <span>LINES: <span class="v" id="st-lines">0</span></span>
+      <span class="spacer"></span>
+      <button class="btn">Save Log</button>
+      <button class="tg active" id="tg-time">TIME</button>
+      <button class="tg active" id="tg-auto">AUTO-SCROLL</button>
+    </div>
+
+    <!-- Converter popup overlay -->
+    <div class="popup-overlay" id="popup">
+      <div class="popup">
+        <h3>ASCII ↔ HEX Converter <span class="x">×</span></h3>
+        <div class="field">
+          <div class="lbl">ASCII  (escapes: \n  \r  \t  \0  \\  \xNN)</div>
+          <div class="box" id="popup-ascii"></div>
+        </div>
+        <div class="field">
+          <div class="lbl">HEX bytes</div>
+          <div class="box" id="popup-hex"></div>
+        </div>
       </div>
-      <textarea id="tx" placeholder="Enter to send · Shift+Enter for newline" rows="4" disabled></textarea>
-      <div class="preview" id="preview">
-        <div class="row"><span class="key">ASCII</span><span class="val" id="prev-ascii">(empty)</span></div>
-        <div class="row"><span class="key">HEX</span><span class="val" id="prev-hex">(empty)</span></div>
-      </div>
-      <button class="btn primary" id="send-btn" disabled>Send</button>
     </div>
   </div>
 
-  <div class="footer">
-    <span>STATUS: <span class="v" id="st-conn">Disconnected</span></span>
-    <span>RX: <span class="rxv" id="st-rx">0</span> B</span>
-    <span>TX: <span class="txv" id="st-tx">0</span> B</span>
-    <span>LINES: <span class="v" id="st-lines">0</span></span>
-  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <button class="replay" id="replay">↻ 다시 재생</button>
 
 <script>
-(function(){
-  const $ = id => document.getElementById(id);
-  const enc = new TextEncoder();
-  let connected = false;
-  let mode = 'text';       // 'text' | 'hex'
-  let showHex = false;     // ASCII <-> HEX display
-  let rxBytes = 0, txBytes = 0, lineCount = 0;
-  let demoTimer = null;
-  let t = 0;
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const enc = new TextEncoder();
 
-  const con = $('console');
-  function ts(){const d=new Date();return d.toTimeString().slice(0,8)+'.'+String(d.getMilliseconds()).padStart(3,'0')}
-  function toHex(bytes){let s='';for(let i=0;i<bytes.length;i++){if(i)s+=' ';s+=bytes[i].toString(16).toUpperCase().padStart(2,'0')}return s}
-  function atBottom(){return con.scrollHeight - con.scrollTop - con.clientHeight < 40}
-  function append(kind, text){
-    const stick = atBottom();
-    const h = $('hint'); if(h) h.remove();
-    const ln = document.createElement('div'); ln.className = 'ln ' + kind;
-    let html = '';
-    if(kind !== 'sys') html += `<span class="ts">${ts()}</span>`;
-    const arrow = kind==='rx'?'◄':kind==='tx'?'►':kind==='err'?'×':'·';
-    html += `<span class="arrow">${arrow}</span><span class="data"></span>`;
-    ln.innerHTML = html;
-    const bytes = enc.encode(text);
-    const shown = (showHex && (kind==='rx'||kind==='tx')) ? toHex(bytes) : text;
-    ln.querySelector('.data').textContent = shown;
-    con.appendChild(ln);
-    if(kind==='rx'||kind==='tx'){ lineCount++; $('st-lines').textContent = lineCount; }
-    if(stick) con.scrollTop = con.scrollHeight;
-    while(con.children.length > 200) con.removeChild(con.firstChild);
+let timers = [];
+function clearAll() { timers.forEach(t => { if (typeof t === 'number') clearTimeout(t); else if (t && t.clear) t.clear(); }); timers = []; }
+
+function ts() { const d = new Date(); return d.toTimeString().slice(0,8) + '.' + String(d.getMilliseconds()).padStart(3,'0'); }
+function toHex(bytes) { let s=''; for(let i=0;i<bytes.length;i++){ if(i)s+=' '; s+=bytes[i].toString(16).toUpperCase().padStart(2,'0'); } return s; }
+
+let rxBytes = 0, txBytes = 0, lineCount = 0;
+let displayHex = false;
+const consoleEl = $("console");
+
+function clearConsole() {
+  consoleEl.innerHTML = '';
+  lineCount = 0;
+  $("st-lines").textContent = '0';
+}
+
+function append(kind, text) {
+  const ln = document.createElement('div');
+  ln.className = 'ln ' + kind;
+  ln.dataset.raw = text;
+  ln.dataset.kind = kind;
+  let html = '';
+  if (kind !== 'sys') html += `<span class="ts">${ts()}</span>`;
+  const arrow = kind === 'rx' ? '◄' : kind === 'tx' ? '►' : kind === 'err' ? '×' : '·';
+  html += `<span class="arrow">${arrow}</span><span class="data"></span>`;
+  ln.innerHTML = html;
+  const shown = (displayHex && (kind === 'rx' || kind === 'tx')) ? toHex(enc.encode(text)) : text;
+  ln.querySelector('.data').textContent = shown;
+  consoleEl.appendChild(ln);
+  if (kind === 'rx' || kind === 'tx') { lineCount++; $("st-lines").textContent = lineCount; }
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+  while (consoleEl.children.length > 80) consoleEl.removeChild(consoleEl.firstChild);
+}
+
+function rerenderConsole() {
+  for (const ln of consoleEl.children) {
+    const kind = ln.dataset.kind;
+    if (kind !== 'rx' && kind !== 'tx') continue;
+    const raw = ln.dataset.raw || '';
+    ln.querySelector('.data').textContent = displayHex ? toHex(enc.encode(raw)) : raw;
   }
+}
 
-  function setConnected(on){
-    connected = on;
-    $('led').classList.toggle('on', on);
-    const btn = $('connect');
-    btn.classList.toggle('on', on); btn.textContent = on ? 'Disconnect' : 'Connect';
-    $('tx').disabled = !on; $('send-btn').disabled = !on;
-    $('port').disabled = on; $('baud').disabled = on;
-    $('st-conn').textContent = on ? `${$('port').value} @ ${$('baud').value} baud` : 'Disconnected';
-    append('sys', on ? `── Connected: ${$('port').value} @ ${$('baud').value} baud ──` : '── Disconnected ──');
-    if(on){ $('tx').focus(); startDemo(); } else stopDemo();
+function appendRx(text) { rxBytes += enc.encode(text).length + 1; $("st-rx").textContent = rxBytes; append('rx', text); }
+function appendTx(text) { txBytes += enc.encode(text).length + 2; $("st-tx").textContent = txBytes; append('tx', text); }
+
+function setConnected(on) {
+  $("led").classList.toggle("on", on);
+  const b = $("connect-btn");
+  b.classList.toggle("on", on);
+  b.textContent = on ? 'Disconnect' : 'Connect';
+  $("st-conn").textContent = on ? 'COM3 @ 115200 baud' : 'Disconnected';
+}
+
+async function typeInto(elId, text, perChar) {
+  const el = $(elId);
+  el.textContent = '';
+  for (const c of text) {
+    el.textContent += c;
+    if (perChar) await sleep(perChar);
   }
+}
 
-  /* fake device — periodic sensor stream */
-  function startDemo(){
-    const lines = [
-      () => `[BOOT] device ready, fw v2.3.1`,
-      () => `temp=${(24+Math.sin(t/8)*3+Math.random()).toFixed(2)}C  hum=${(48+Math.cos(t/10)*6+Math.random()*2).toFixed(1)}%`,
-      () => `accel x=${(Math.random()*2-1).toFixed(3)} y=${(Math.random()*2-1).toFixed(3)} z=${(0.98+Math.random()*0.04).toFixed(3)}`,
-      () => `adc[0]=${Math.floor(Math.random()*4096)} adc[1]=${Math.floor(Math.random()*4096)}`,
-      () => `rssi=${-(40+Math.floor(Math.random()*50))}dBm  pkt=${1000+t}`,
-    ];
-    let first = true;
-    demoTimer = setInterval(() => {
-      const n = first ? 1 : (1+Math.floor(Math.random()*2));
-      for(let i=0;i<n;i++){
-        const line = first ? lines[0]() : lines[1+Math.floor(Math.random()*(lines.length-1))]();
-        first = false;
-        rxBytes += enc.encode(line).length + 1;
-        $('st-rx').textContent = rxBytes;
-        append('rx', line);
-      }
-      t++;
-    }, 800);
+async function typeIntoEditor(text, perChar) {
+  $("typed").textContent = '';
+  for (const c of text) {
+    $("typed").textContent += c;
+    if (perChar) await sleep(perChar);
+    updatePreview();
   }
-  function stopDemo(){ if(demoTimer){ clearInterval(demoTimer); demoTimer = null } }
+}
 
-  function demoEcho(cmd){
-    setTimeout(() => {
-      let resp;
-      if(/^AT$/i.test(cmd)) resp = 'OK';
-      else if(/^help$/i.test(cmd)) resp = 'cmds: AT, status, reset, help';
-      else if(/^status$/i.test(cmd)) resp = `status: running, uptime ${Math.floor(performance.now()/1000)}s`;
-      else if(/^reset$/i.test(cmd)) resp = '[BOOT] device ready, fw v2.3.1';
-      else resp = 'echo: ' + cmd;
-      rxBytes += enc.encode(resp).length + 1;
-      $('st-rx').textContent = rxBytes;
-      append('rx', resp);
-    }, 120);
-  }
+function flash(id) {
+  const e = $(id); if (!e) return;
+  e.classList.add('is-flash');
+  setTimeout(() => e.classList.remove('is-flash'), 700);
+}
 
-  /* HEX parser (tiny, lenient) */
-  function parseHex(s){
-    const cleaned = s.replace(/0x/gi,'').replace(/[\s,:;\-_]+/g,' ').trim();
-    if(!cleaned) return new Uint8Array();
-    const toks = cleaned.split(/\s+/);
-    const out = [];
-    for(const t of toks){
-      if(t.length % 2 !== 0) throw new Error(`Token '${t}' has odd hex digits`);
-      for(let i=0;i<t.length;i+=2){
-        const v = parseInt(t.substr(i,2),16);
-        if(isNaN(v)) throw new Error(`Invalid hex '${t.substr(i,2)}'`);
-        out.push(v);
-      }
-    }
-    return new Uint8Array(out);
-  }
-
-  function escAscii(bytes){
-    let s = '';
-    for(const b of bytes){
-      if(b===0x5C) s+='\\\\';
-      else if(b===0x0A) s+='\\n';
-      else if(b===0x0D) s+='\\r';
-      else if(b===0x09) s+='\\t';
-      else if(b>=0x20 && b<=0x7E) s+=String.fromCharCode(b);
-      else s+='\\x'+b.toString(16).toUpperCase().padStart(2,'0');
-    }
-    return s;
-  }
-
-  function buildPayload(){
-    const ending = ($('ending').value || '').replace('\\n','\n').replace('\\r','\r');
-    if(mode === 'text'){
-      const raw = $('tx').value.replace(/[\r\n]+$/, '');
-      const bytes = enc.encode(raw + ending);
-      return {bytes, logRaw:raw};
-    } else {
-      try {
-        const parsed = parseHex($('tx').value);
-        const bytes = new Uint8Array(parsed.length + ending.length);
-        bytes.set(parsed, 0);
-        bytes.set(enc.encode(ending), parsed.length);
-        return {bytes, logRaw:null};
-      } catch(e){ return {error: e.message} }
-    }
-  }
-
-  function updatePreview(){
-    const p = buildPayload();
-    if(p.error){
-      $('prev-ascii').textContent = ''; $('prev-ascii').className = 'val err';
-      $('prev-hex').textContent = 'error: '+p.error; $('prev-hex').className = 'val err';
-      return;
-    }
-    $('prev-ascii').className = 'val';
-    $('prev-hex').className = 'val';
-    if(!p.bytes.length){
-      $('prev-ascii').textContent='(empty)'; $('prev-hex').textContent='(empty)';
-    } else {
-      $('prev-ascii').textContent = escAscii(p.bytes);
-      $('prev-hex').textContent = toHex(p.bytes);
-    }
-  }
-
-  function doSend(){
-    if(!connected) return;
-    const p = buildPayload();
-    if(p.error){ append('err', 'Hex parse error: ' + p.error); return }
-    if(!p.bytes.length) return;
-    txBytes += p.bytes.length; $('st-tx').textContent = txBytes;
-    if(mode === 'text') append('tx', p.logRaw || ''); else append('tx', toHex(p.bytes));
-    if(mode === 'text' && p.logRaw) demoEcho(p.logRaw);
-  }
-
-  /* events */
-  $('connect').addEventListener('click', () => setConnected(!connected));
-  $('send-btn').addEventListener('click', doSend);
-  $('tx').addEventListener('keydown', e => {
-    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); doSend(); }
-  });
-  $('tx').addEventListener('input', updatePreview);
-  $('ending').addEventListener('change', updatePreview);
-
-  $('m-text').addEventListener('click', () => { mode='text'; $('m-text').classList.add('active'); $('m-hex').classList.remove('active'); $('tx').placeholder='Enter to send · Shift+Enter for newline'; updatePreview(); });
-  $('m-hex').addEventListener('click',  () => { mode='hex';  $('m-hex').classList.add('active'); $('m-text').classList.remove('active'); $('tx').placeholder='Hex bytes, e.g. AA 55 01 00 FF'; updatePreview(); });
-
-  $('tg-ascii').addEventListener('click', () => { showHex=false; $('tg-ascii').classList.add('active'); $('tg-hex').classList.remove('active'); rerenderConsole(); });
-  $('tg-hex').addEventListener('click',  () => { showHex=true;  $('tg-hex').classList.add('active'); $('tg-ascii').classList.remove('active'); rerenderConsole(); });
-
-  function rerenderConsole(){
-    [...con.querySelectorAll('.ln.rx .data, .ln.tx .data')].forEach(el => {
-      const txt = el.dataset.raw || el.textContent;
-      el.dataset.raw = el.dataset.raw || txt;
-      const bytes = enc.encode(el.dataset.raw);
-      el.textContent = showHex ? toHex(bytes) : el.dataset.raw;
-    });
-  }
-
+function setMode(which) {
+  const isText = which === 'text';
+  $("m-text").classList.toggle("active", isText);
+  $("m-hex").classList.toggle("active", !isText);
+  $("typed").dataset.mode = which;
   updatePreview();
-})();
+}
+
+function setDisplayHex(on) {
+  displayHex = on;
+  $("tg-hex").classList.toggle("active", on);
+  $("tg-ascii").classList.toggle("active", !on);
+  rerenderConsole();
+}
+
+function updatePreview() {
+  const ending = $("ending-sel").textContent;
+  const endingBytes = ending === 'CRLF' ? '\r\n' : ending === 'LF' ? '\n' : ending === 'CR' ? '\r' : '';
+  const txt = $("typed").textContent;
+  const mode = $("typed").dataset.mode || 'text';
+  if (mode === 'text') {
+    const full = txt.replace(/[\r\n]+$/, '') + endingBytes;
+    const b = enc.encode(full);
+    $("prev-bytes").textContent = `(${b.length} B)`;
+    $("prev-ascii").textContent = escAscii(b) || '(empty)';
+    $("prev-hex").textContent = toHex(b) || '(empty)';
+  } else {
+    try {
+      const parsed = parseHex(txt);
+      const full = new Uint8Array(parsed.length + endingBytes.length);
+      full.set(parsed, 0); full.set(enc.encode(endingBytes), parsed.length);
+      $("prev-bytes").textContent = `(${full.length} B)`;
+      $("prev-ascii").textContent = escAscii(full) || '(empty)';
+      $("prev-hex").textContent = toHex(full) || '(empty)';
+    } catch (e) {
+      $("prev-bytes").textContent = '';
+      $("prev-ascii").textContent = '';
+      $("prev-hex").textContent = 'error: ' + e.message;
+    }
+  }
+}
+
+function escAscii(bytes) {
+  let s = '';
+  for (const b of bytes) {
+    if (b === 0x5C) s += '\\\\';
+    else if (b === 0x0A) s += '\\n';
+    else if (b === 0x0D) s += '\\r';
+    else if (b === 0x09) s += '\\t';
+    else if (b >= 0x20 && b <= 0x7E) s += String.fromCharCode(b);
+    else s += '\\x' + b.toString(16).toUpperCase().padStart(2,'0');
+  }
+  return s;
+}
+
+function parseHex(s) {
+  const cleaned = s.replace(/0x/gi, '').replace(/[\s,:;\-_]+/g, ' ').trim();
+  if (!cleaned) return new Uint8Array();
+  const toks = cleaned.split(/\s+/);
+  const out = [];
+  for (const t of toks) {
+    if (t.length % 2 !== 0) throw new Error(`token '${t}' has odd hex digits`);
+    for (let i = 0; i < t.length; i += 2) {
+      const v = parseInt(t.substr(i, 2), 16);
+      if (isNaN(v)) throw new Error(`invalid hex '${t.substr(i, 2)}'`);
+      out.push(v);
+    }
+  }
+  return new Uint8Array(out);
+}
+
+function showPopup(on) { $("popup").classList.toggle("is-open", !!on); }
+
+/* ---------- Scenario ---------- */
+const SCENARIO = [
+  // Scene 1: Connect + auto RX stream (~12s)
+  {
+    caption: "Scene 1 / 포트 연결 — Click [Connect]",
+    duration: 12000,
+    actions: [
+      { at: 200,  fn: async () => { setConnected(false); clearConsole(); rxBytes=0; txBytes=0; $("st-rx").textContent='0'; $("st-tx").textContent='0'; setMode('text'); setDisplayHex(false); showPopup(false); append('sys', '· Ready. Select a port and click [Connect].'); } },
+      { at: 1500, fn: async () => flash("connect-btn") },
+      { at: 2000, fn: async () => { setConnected(true); append('sys', '── Connected: COM3 @ 115200 baud ──'); } },
+      { at: 3000, fn: async () => appendRx('[BOOT] device ready, fw v2.3.1') },
+      { at: 4000, fn: async () => appendRx('temp=24.32C  hum=48.2%') },
+      { at: 5200, fn: async () => appendRx('accel x=0.013 y=-0.027 z=0.998') },
+      { at: 6500, fn: async () => appendRx('adc[0]=2034  adc[1]=3911') },
+      { at: 7800, fn: async () => appendRx('rssi=-58dBm  pkt=1001') },
+      { at: 9000, fn: async () => appendRx('temp=24.41C  hum=48.5%') },
+      { at: 10200, fn: async () => appendRx('rssi=-61dBm  pkt=1002') },
+    ],
+  },
+
+  // Scene 2: TEXT command send (~10s)
+  {
+    caption: "Scene 2 / TEXT 모드로 명령 송신 — Enter to send",
+    duration: 10000,
+    actions: [
+      { at: 200, fn: async () => { setMode('text'); $("typed").textContent=''; updatePreview(); } },
+      { at: 800, fn: async () => typeIntoEditor('status', 90) },
+      { at: 2500, fn: async () => flash("send-btn") },
+      { at: 3000, fn: async () => { appendTx('status'); } },
+      { at: 3600, fn: async () => appendRx('status: running, uptime 1287s') },
+      { at: 5000, fn: async () => { $("typed").textContent=''; updatePreview(); } },
+      { at: 5400, fn: async () => typeIntoEditor('AT', 120) },
+      { at: 6600, fn: async () => flash("send-btn") },
+      { at: 7000, fn: async () => { appendTx('AT'); } },
+      { at: 7500, fn: async () => appendRx('OK') },
+      { at: 9000, fn: async () => appendRx('temp=24.49C  hum=48.7%') },
+    ],
+  },
+
+  // Scene 3: HEX mode send (~12s)
+  {
+    caption: "Scene 3 / HEX 모드로 바이너리 프레임 송신",
+    duration: 12000,
+    actions: [
+      { at: 300,  fn: async () => { $("typed").textContent=''; flash("m-hex"); } },
+      { at: 900,  fn: async () => setMode('hex') },
+      { at: 1500, fn: async () => typeIntoEditor('02 41 35 30 30 03', 65) },
+      { at: 5000, fn: async () => flash("send-btn") },
+      { at: 5500, fn: async () => { appendTx('02 41 35 30 30 03 0D 0A'); } },
+      { at: 6200, fn: async () => appendRx('06') },
+      { at: 7200, fn: async () => appendRx('02 41 35 30 30 03') },
+      { at: 8500, fn: async () => { $("typed").textContent=''; flash("m-text"); } },
+      { at: 9000, fn: async () => setMode('text') },
+      { at: 10000, fn: async () => appendRx('rssi=-60dBm  pkt=1004') },
+    ],
+  },
+
+  // Scene 4: Display ASCII <-> HEX toggle (~7s)
+  {
+    caption: "Scene 4 / 콘솔 표시를 ASCII ↔ HEX 로 전환",
+    duration: 7000,
+    actions: [
+      { at: 200,  fn: async () => flash("tg-hex") },
+      { at: 700,  fn: async () => setDisplayHex(true) },
+      { at: 3500, fn: async () => flash("tg-ascii") },
+      { at: 4000, fn: async () => setDisplayHex(false) },
+      { at: 5500, fn: async () => appendRx('temp=24.55C  hum=48.9%') },
+    ],
+  },
+
+  // Scene 5: Converter popup (~9s)
+  {
+    caption: "Scene 5 / ASCII ↔ HEX 변환기 팝업",
+    duration: 9000,
+    actions: [
+      { at: 200,  fn: async () => flash("conv-btn") },
+      { at: 700,  fn: async () => { showPopup(true); $("popup-ascii").textContent=''; $("popup-hex").textContent=''; } },
+      { at: 1300, fn: async () => typeInto("popup-ascii", "\\x02A50000\\x03", 70) },
+      { at: 4500, fn: async () => { $("popup-hex").textContent = '02 41 35 30 30 30 30 03'; } },
+      { at: 6500, fn: async () => showPopup(false) },
+      { at: 7200, fn: async () => appendRx('rssi=-59dBm  pkt=1005') },
+    ],
+  },
+];
+
+let playStartedAt;
+const totalDuration = SCENARIO.reduce((a, s) => a + s.duration, 0);
+
+function runScene(idx) {
+  const scene = SCENARIO[idx];
+  $("caption").textContent = scene.caption;
+  for (const a of scene.actions) {
+    timers.push(setTimeout(a.fn, a.at));
+  }
+  timers.push(setTimeout(() => {
+    if (idx + 1 < SCENARIO.length) runScene(idx + 1);
+    else timers.push(setTimeout(() => {
+      $("caption").textContent = "✓ 시연 종료 — 아래 ↻ 버튼으로 다시 재생";
+      $("progress").style.width = "100%";
+    }, 400));
+  }, scene.duration));
+}
+
+function startProgress() {
+  const tick = setInterval(() => {
+    const now = performance.now() - playStartedAt;
+    const pct = Math.min(100, (now / totalDuration) * 100);
+    $("progress").style.width = pct + "%";
+    if (pct >= 100) clearInterval(tick);
+  }, 120);
+  timers.push({ clear: () => clearInterval(tick) });
+}
+
+function play() {
+  clearAll();
+  $("progress").style.width = "0%";
+  playStartedAt = performance.now();
+  startProgress();
+  runScene(0);
+}
+
+$("replay").addEventListener("click", play);
+window.addEventListener('load', play);
 </script>
 </body>
 </html>
