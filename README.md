@@ -1,4 +1,5 @@
 <h1 align="center">CNTerminal</h1>
+홈페이지 :: https://www.coding-now.com/cnterminal
 
 <p align="center">
   포터블 시리얼 통신 터미널 · Windows 단일 .exe · 설치 불필요<br/>
