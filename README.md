@@ -1,6 +1,8 @@
 <h1 align="center">CNTerminal</h1>
 홈페이지 :: https://www.coding-now.com/cnterminal
 
+> 🌐 **Live (English): [www.coding-now.com/en/cnterminal](https://www.coding-now.com/en/cnterminal)**
+
 <p align="center">
   포터블 시리얼 통신 터미널 · Windows 단일 .exe · 설치 불필요<br/>
   Rust + <a href="https://github.com/emilk/egui">egui</a> · 다크 앰버 CRT 테마
